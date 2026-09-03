@@ -7,7 +7,7 @@ Cherry's Lab is a single HTML file with two tools behind two tabs. There's no ba
 | Tool | What it does | Needs an API key? | Output |
 |---|---|---|---|
 | **Express** | Name her, dial in five personality traits, and generate a persona sketch instantly, in your browser. | No | A short persona paragraph |
-| **Studio** | Fill in a short brief and let an LLM write a full, cinematic system prompt for a companion character. | Yes — your own | A ~700–1000 word copy-paste system prompt |
+| **Studio** | Fill in a short brief and let an LLM write a full, cinematic system prompt for a companion character. | Yes — your own | A rich detailed word copy-paste system prompt |
 
 ---
 
