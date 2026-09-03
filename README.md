@@ -2,7 +2,7 @@
 
 **A [Cherry's List](https://www.cherryslist.ai/) tool.** Cherry's Lab is a free, open-source **AI companion prompt generator** — build a character persona in one click, or generate a full, cinematic **system prompt** for your AI girlfriend, AI boyfriend, or roleplay companion. It runs entirely in your browser: no login, no sign-up, no backend, nothing to install.
 
-Paste the output straight into **Character.AI, SillyTavern, Janitor AI, ChatGPT, Claude**, or any AI companion / chatbot app that accepts a character definition or system prompt.
+Paste the output straight into an AI companion / chatbot app that accepts a character definition or system prompt.
 
 Two tools, two tabs:
 
