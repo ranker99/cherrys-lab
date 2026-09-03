@@ -27,7 +27,7 @@ Two tools, two tabs:
 
 ## Works with
 
-Cherry's Lab produces plain, labelled character text, so it works anywhere you can paste a system prompt or character card — **Character.AI, SillyTavern, Janitor AI, Chub / Venus, ChatGPT, Claude, Poe**, and most other AI girlfriend / AI boyfriend / AI companion apps.
+Cherry's Lab produces plain, labelled character text, so it works anywhere you can paste a system prompt or character card.
 
 ---
 
