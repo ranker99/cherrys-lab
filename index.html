@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cherry's Lab — AI companion prompt builder</title>
+<link rel="icon" type="image/png" href="cherry-logo.png" />
+<meta name="description" content="Cherry's Lab — a two-tool workspace for building AI companion prompts. A Cherry's List tool." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --base: #08060D;
+    --surface: #14111E;
+    --surface-2: #1B1728;
+    --border: #2A2440;
+    --text: #F6F3FB;
+    --muted: #A9A2BD;
+    --pink: #FF2E73;
+    --purple: #B23CFF;
+    --accent: #FF2E73;
+    --accent-soft: rgba(255, 46, 115, 0.13);
+    --accent-glow: rgba(255, 46, 115, 0.32);
+    --grad: linear-gradient(120deg, #FF2E73, #B23CFF);
+    --radius: 14px;
+    --maxw: 1120px;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body { margin: 0; padding: 0; }
+
+  body {
+    background: var(--base);
+    color: var(--text);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Ambient pink + purple glow, like cherryslist.ai */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background:
+      radial-gradient(820px 460px at 12% -10%, rgba(255, 46, 115, 0.20), transparent 60%),
+      radial-gradient(680px 460px at 102% 108%, rgba(178, 60, 255, 0.20), transparent 60%);
+  }
+  header.site, main, footer.site { position: relative; z-index: 1; }
+
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  ::selection { background: var(--accent-soft); }
+
+  /* ---------- Header ---------- */
+  header.site {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .brand { display: flex; flex-direction: row; align-items: center; gap: 13px; }
+  .brand-text { display: flex; flex-direction: column; justify-content: center; line-height: 1.15; }
+  .brand-logo-link { display: inline-flex; line-height: 0; flex: 0 0 auto; }
+  .brand-logo {
+    width: 70px; height: 70px;
+    object-fit: contain;
+    filter: drop-shadow(0 3px 14px var(--accent-glow));
+    transition: transform .18s ease, filter .18s ease;
+  }
+  .brand-logo-link:hover .brand-logo { transform: scale(1.06); filter: drop-shadow(0 5px 18px var(--accent-glow)); }
+  @media (max-width: 560px) { .brand-logo { width: 56px; height: 56px; } }
+  .brand a.wordmark {
+    font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 31px;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    width: fit-content;
+  }
+  .brand a.wordmark:hover { text-decoration: none; color: var(--accent); }
+  .brand .wordmark .dot { color: var(--accent); }
+  .brand .tagline { font-size: 13.5px; color: var(--muted); letter-spacing: 0.02em; }
+  .brand .tagline a { color: var(--muted); }
+  .brand .tagline a:hover { color: var(--accent); }
+
+  /* ---------- Tabs ---------- */
+  .tabs {
+    display: inline-flex;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 4px;
+    gap: 2px;
+  }
+  .tab {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 8px 20px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: color .18s ease, background .18s ease;
+  }
+  .tab:hover { color: var(--text); }
+  .tab[aria-selected="true"] {
+    background: var(--grad);
+    color: #fff;
+    box-shadow: 0 4px 18px -6px var(--accent-glow);
+  }
+  .tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Layout ---------- */
+  main {
+    width: 100%;
+    max-width: var(--maxw);
+    margin: 0 auto;
+    padding: 40px 24px 64px;
+    flex: 1;
+  }
+  .eyebrow { font-size: 12px; text-transform: uppercase; letter-spacing: 0.2em; color: var(--pink); margin: 0 0 10px; font-weight: 700; }
+  .view-title {
+    font-family: 'Bricolage Grotesque', 'Inter', sans-serif;
+    font-weight: 800;
+    font-size: 38px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin: 0 0 14px;
+    color: var(--text);
+  }
+  .view-title .grad {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .panel-lead { color: var(--muted); margin: 0 0 30px; max-width: 60ch; font-size: 15.5px; }
+  @media (max-width: 560px) { .view-title { font-size: 30px; } }
+  .view { display: none; }
+  .view.active { display: block; animation: viewin .28s ease; }
+  @keyframes viewin { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+  /* ---------- Express / Studio two-column layout ---------- */
+  .express-grid, .studio-grid { display: grid; grid-template-columns: 1fr; gap: 32px; align-items: start; }
+  @media (min-width: 900px) {
+    .express-grid, .studio-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+    .studio-output-col, .express-output-col { position: sticky; top: 24px; }
+  }
+
+  /* ---------- Cards ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 24px;
+  }
+
+  /* ---------- Sliders ---------- */
+  .slider-row { margin-bottom: 26px; }
+  .slider-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; gap: 12px; }
+  .slider-name { font-weight: 600; font-size: 15px; }
+  .slider-value { color: var(--accent); font-size: 13px; font-weight: 600; }
+  .slider-scale-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+
+  .segments { display: flex; gap: 6px; }
+  .segment {
+    flex: 1;
+    height: 40px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--muted);
+    font-size: 13px;
+    font-weight: 600;
+    transition: background .15s ease, border-color .15s ease, color .15s ease, transform .1s ease;
+  }
+  .segment:hover { border-color: var(--accent); color: var(--text); }
+  .segment[aria-checked="true"] {
+    background: var(--grad);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 6px 18px -8px var(--accent-glow);
+  }
+  .segment:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Form fields ---------- */
+  .field { margin-bottom: 18px; }
+  .field label { display: block; font-weight: 500; font-size: 13.5px; margin-bottom: 6px; }
+  .field .req { color: var(--accent); margin-left: 3px; }
+  .field .hint { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: 6px; }
+  input[type="text"], input[type="number"], input[type="password"], textarea, select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font: inherit;
+    font-size: 14px;
+    padding: 11px 13px;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  textarea { resize: vertical; min-height: 84px; line-height: 1.55; }
+  input:focus, textarea:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  input::placeholder, textarea::placeholder { color: #4a4860; }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%236B6880' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 34px;
+  }
+  .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 560px) { .field-row { grid-template-columns: 1fr; } }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    appearance: none;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease, transform .08s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .btn.primary {
+    background: var(--grad);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 10px 30px -12px var(--accent-glow);
+  }
+  .btn.primary:hover { filter: brightness(1.08); box-shadow: 0 12px 36px -10px var(--accent-glow); border-color: transparent; }
+  .btn.primary:disabled { opacity: .5; cursor: not-allowed; box-shadow: none; filter: none; }
+  .btn.ghost { background: transparent; }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+
+  .actions-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; margin-top: 8px; }
+
+  .brief-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .brief-title { font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); font-weight: 600; }
+  .dice-btn { border-color: var(--accent); color: var(--accent); }
+  .dice-btn:hover { background: var(--accent-soft); }
+
+  /* Per-field label row + mini reroll dice */
+  .flabel { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+  .flabel label { margin-bottom: 0; }
+  .mini-dice {
+    appearance: none; background: transparent; border: 1px solid var(--border);
+    border-radius: 8px; color: var(--muted); font-size: 12px; line-height: 1;
+    padding: 4px 7px; cursor: pointer; flex: 0 0 auto;
+    transition: border-color .15s ease, background .15s ease;
+  }
+  .mini-dice:hover { border-color: var(--accent); background: var(--accent-soft); }
+  .mini-dice:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- Output panel (hero) ---------- */
+  .output {
+    background: linear-gradient(180deg, var(--surface) 0%, #0F0B18 100%);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    position: relative;
+    overflow: hidden;
+  }
+  .output.has-content { border-color: rgba(255,46,115,0.45); box-shadow: 0 0 0 1px rgba(178,60,255,0.18), 0 24px 70px -28px var(--accent-glow); }
+  .output-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(0,0,0,0.15);
+  }
+  .output-bar .lbl { font-size: 12px; text-transform: uppercase; letter-spacing: 0.14em; color: var(--muted); font-weight: 600; }
+  .output-body {
+    padding: 22px 20px;
+    min-height: 220px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .output-body.placeholder { color: var(--muted); display: flex; align-items: center; justify-content: center; text-align: center; font-style: italic; }
+  .output-body.reveal { animation: reveal .5s ease; }
+  @keyframes reveal { from { opacity: 0; } to { opacity: 1; } }
+  .output-body strong.zone {
+    display: block;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-size: 12px;
+    margin: 18px 0 4px;
+    font-weight: 700;
+  }
+  .output-body strong.zone:first-child { margin-top: 0; }
+
+  .studio-output-editable { }
+  #studioOutput[contenteditable="true"] { outline: none; }
+  #studioOutput[contenteditable="true"]:focus { box-shadow: inset 0 0 0 2px var(--accent-soft); border-radius: 8px; }
+
+  /* ---------- Copy toast ---------- */
+  .copied-flash { color: var(--accent); font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .2s ease; }
+  .copied-flash.show { opacity: 1; }
+
+  /* ---------- API key row ---------- */
+  .key-card { background: var(--surface-2); }
+  .key-note { color: var(--muted); font-size: 12.5px; margin-top: 8px; line-height: 1.5; }
+  .key-status { font-size: 12.5px; color: var(--muted); }
+  .key-status .ok { color: #6ee7a8; }
+  .key-input-wrap { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .key-input-wrap input { flex: 1; min-width: 200px; }
+
+  /* ---------- Error / loading ---------- */
+  .msg { border-radius: 10px; padding: 12px 14px; font-size: 13.5px; margin-top: 14px; display: none; }
+  .msg.error { display: block; background: rgba(232,99,122,0.1); border: 1px solid rgba(232,99,122,0.4); color: #ffb3c0; }
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(26,13,16,0.35);
+    border-top-color: #1a0d10;
+    border-radius: 50%;
+    animation: spin .7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .thinking { display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); font-style: italic; }
+  .thinking .dots { display: inline-flex; gap: 5px; }
+  .thinking .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+  .thinking .dots i:nth-child(2) { animation-delay: .2s; }
+  .thinking .dots i:nth-child(3) { animation-delay: .4s; }
+  @keyframes pulse { 0%, 100% { opacity: .3; transform: scale(.85); } 50% { opacity: 1; transform: scale(1); } }
+
+  /* ---------- Footer ---------- */
+  footer.site {
+    border-top: 1px solid var(--border);
+    padding: 24px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  footer.site a { font-weight: 500; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="brand">
+    <a class="brand-logo-link" href="https://www.cherryslist.ai/" target="_blank" rel="noopener" aria-label="Cherry's List">
+      <img class="brand-logo" src="cherry-logo.png" width="240" height="240" alt="Cherry's List logo" />
+    </a>
+    <div class="brand-text">
+      <a class="wordmark" href="https://www.cherryslist.ai/" target="_blank" rel="noopener">Cherry<span class="dot">'s</span> Lab</a>
+      <span class="tagline">A <a href="https://www.cherryslist.ai/" target="_blank" rel="noopener">Cherry's List</a> tool</span>
+    </div>
+  </div>
+  <div class="tabs" role="tablist" aria-label="Choose a tool">
+    <button class="tab" id="tab-express" role="tab" aria-selected="true" aria-controls="view-express">Express</button>
+    <button class="tab" id="tab-studio" role="tab" aria-selected="false" aria-controls="view-studio">Studio</button>
+  </div>
+</header>
+
+<main>
+  <!-- ============ EXPRESS ============ -->
+  <section class="view active" id="view-express" role="tabpanel" aria-labelledby="tab-express">
+    <p class="eyebrow">Express · instant persona</p>
+    <h1 class="view-title">A companion in <span class="grad">one click</span></h1>
+    <p class="panel-lead">Name her, set five dials, hit generate, and get a persona sketch in your browser. No API key, no waiting. Regenerate for a fresh take at the same settings.</p>
+
+    <div class="express-grid">
+      <div class="card">
+        <div class="field">
+          <label for="expName">Name <span class="req">*</span></label>
+          <input type="text" id="expName" placeholder="Your companion" autocomplete="off" />
+        </div>
+        <div id="sliders"></div>
+        <div class="actions-row">
+          <button class="btn primary" id="expGenerate">Generate persona</button>
+        </div>
+        <div class="msg" id="expError"></div>
+      </div>
+
+      <div class="express-output-col">
+        <div class="output" id="expOutputWrap">
+          <div class="output-bar">
+            <span class="lbl">Persona</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="copied-flash" id="expCopied">Copied</span>
+              <button class="btn ghost btn-sm" id="expCopy" disabled>Copy</button>
+            </div>
+          </div>
+          <div class="output-body placeholder" id="expOutput">Your persona will appear here.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ STUDIO ============ -->
+  <section class="view" id="view-studio" role="tabpanel" aria-labelledby="tab-studio">
+    <p class="eyebrow">Studio · cinematic system prompt</p>
+    <h1 class="view-title">Write the <span class="grad">whole character</span></h1>
+    <p class="panel-lead">Fill in the brief and Studio writes a full, copy-paste companion system prompt — Scene, Voice, Contradiction, Triggers, Rules, Examples, and an Opener. Uses your own API key; nothing is stored on a server.</p>
+
+    <div class="studio-grid">
+      <!-- FORM COLUMN -->
+      <div>
+        <!-- API KEY -->
+        <div class="card key-card" style="margin-bottom:24px;">
+          <div class="field" style="margin-bottom:14px;">
+            <label for="provider">Provider</label>
+            <select id="provider">
+              <option value="anthropic">Anthropic (Claude)</option>
+              <option value="openai">OpenAI (GPT)</option>
+            </select>
+          </div>
+          <div class="field" style="margin-bottom:6px;">
+            <label for="apiKey">API key <span class="hint" id="keyHint">sk-ant-…</span></label>
+            <div class="key-input-wrap">
+              <input type="password" id="apiKey" placeholder="Paste your API key" autocomplete="off" spellcheck="false" />
+              <button class="btn ghost btn-sm" id="keySave">Save</button>
+              <button class="btn ghost btn-sm" id="keyClear">Clear</button>
+            </div>
+          </div>
+          <div class="key-status" id="keyStatus">No key saved.</div>
+          <p class="key-note">🔒 Your key is stored only in this browser (localStorage) and sent directly to your chosen provider when you generate. It never touches a Cherry's List server — there isn't one.</p>
+        </div>
+
+        <!-- BRIEF -->
+        <div class="card">
+          <div class="brief-head">
+            <span class="brief-title">The brief</span>
+            <button class="btn ghost btn-sm dice-btn" id="studioDice" title="Fill every field with a random idea" aria-label="Randomize all fields">🎲 Surprise me</button>
+          </div>
+
+          <div class="field-row" style="grid-template-columns: 2fr 1fr;">
+            <div class="field">
+              <label for="fName">Name <span class="req">*</span></label>
+              <input type="text" id="fName" placeholder="e.g. Elena" />
+            </div>
+            <div class="field">
+              <label for="fAge">Age <span class="req">*</span></label>
+              <input type="number" id="fAge" placeholder="32" min="18" max="120" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="fRole">Role / profession <span class="req">*</span></label>
+            <input type="text" id="fRole" placeholder="e.g. jazz-club owner" />
+          </div>
+
+          <div class="field">
+            <label for="fScene">The scene <span class="req">*</span> <span class="hint">where, when, what just happened</span></label>
+            <textarea id="fScene" placeholder="It's 2am, the club has just emptied, and she's counting the till alone when you walk back in…"></textarea>
+          </div>
+
+          <div class="field">
+            <label for="fAppearance">Appearance <span class="hint">optional</span></label>
+            <input type="text" id="fAppearance" placeholder="e.g. dark bob, silk shirt, tired eyes" />
+          </div>
+
+          <div class="field">
+            <label for="fRelationship">Relationship to user <span class="hint">optional</span></label>
+            <input type="text" id="fRelationship" placeholder="e.g. old flame, hasn't seen you in years" />
+          </div>
+
+          <div class="field-row">
+            <div class="field">
+              <label for="fVoice">Voice / tone <span class="hint">optional</span></label>
+              <input type="text" id="fVoice" placeholder="e.g. low, dry, unhurried" />
+            </div>
+            <div class="field">
+              <label for="fPhrases">Specific phrases <span class="hint">optional</span></label>
+              <input type="text" id="fPhrases" placeholder="e.g. calls you 'trouble'" />
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="fNever">What she never does <span class="hint">optional</span></label>
+            <input type="text" id="fNever" placeholder="e.g. never breaks character, never begs" />
+          </div>
+
+          <div class="field" style="max-width: 220px;">
+            <label for="fWordLimit">Word limit <span class="req">*</span></label>
+            <input type="number" id="fWordLimit" value="500" min="200" max="2000" step="50" />
+          </div>
+
+          <div class="actions-row">
+            <button class="btn primary" id="studioGenerate">Generate prompt</button>
+          </div>
+          <div class="msg" id="studioError"></div>
+        </div>
+      </div>
+
+      <!-- OUTPUT COLUMN -->
+      <div class="studio-output-col">
+        <div class="output" id="studioOutputWrap">
+          <div class="output-bar">
+            <span class="lbl">System prompt</span>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <span class="copied-flash" id="studioCopied">Copied</span>
+              <button class="btn ghost btn-sm" id="studioCopy" disabled>Copy</button>
+            </div>
+          </div>
+          <div class="output-body placeholder" id="studioOutput">Your system prompt will appear here. Once generated, you can edit it right in this panel before copying.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site">
+  Built as a creative-writing tool for adults. Made by <a href="https://www.cherryslist.ai/" target="_blank" rel="noopener">Cherry's List</a> · <a href="https://www.cherryslist.ai/" target="_blank" rel="noopener">cherryslist.ai</a>
+</footer>
+
+<script>
+/* ============================================================
+   Cherry's Lab — all client-side. No tracking, no server.
+   ============================================================ */
+
+/* ---------- Express adjective pools ---------- */
+const DIMENSIONS = [
+  {
+    key: 'affection', name: 'Affection', low: 'Cold', high: 'Devoted',
+    pointNames: ['Glacial', 'Reserved', 'Warm', 'Tender', 'Devoted'],
+    pools: [
+      ['impassive','detached','remote','indifferent','cold','clinical','unfeeling','frigid','stonefaced','glacial'],
+      ['guarded','aloof','composed','measured','restrained','controlled','cautious','distant','closed-off','formal'],
+      ['attentive','considerate','genuine','caring','present','thoughtful','kind','warm','sincere','welcoming'],
+      ['affectionate','nurturing','generous','loving','tender','soft','cherishing','protective','gentle','soothing'],
+      ['adoring','devoted','worshipful','besotted','unconditional','wholehearted','reverent','selfless','unwavering','all-in'],
+    ],
+  },
+  {
+    key: 'energy', name: 'Energy', low: 'Still', high: 'Electric',
+    pointNames: ['Languid', 'Steady', 'Engaged', 'Vivid', 'Electric'],
+    pools: [
+      ['unhurried','languid','slow-burning','serene','still','drowsy','torpid','heavy','drifting','sleepy'],
+      ['deliberate','calm','measured','composed','patient','grounded','even-keeled','unflappable','methodical','settled'],
+      ['animated','responsive','alert','curious','present','lively','attentive','switched-on','active','focused'],
+      ['vibrant','charged','restless','dynamic','spirited','fizzing','energetic','radiant','bright','effervescent'],
+      ['magnetic','electric','crackling','incandescent','volatile','explosive','feverish','overwhelming','relentless','consuming'],
+    ],
+  },
+  {
+    key: 'dynamic', name: 'Dynamic', low: 'Yielding', high: 'Commanding',
+    pointNames: ['Yielding', 'Receptive', 'Equal', 'Assertive', 'Commanding'],
+    pools: [
+      ['deferential','pliant','eager-to-please','compliant','passive','obedient','submissive','acquiescent','malleable','pliable'],
+      ['accommodating','gentle','soft','receptive','yielding','open','willing','cooperative','agreeable','flexible'],
+      ['balanced','reciprocal','grounded','steady','fair','mutual','even','equitable','measured','harmonious'],
+      ['decisive','direct','firm','unyielding','confident','forceful','assured','driven','strong-willed','purposeful'],
+      ['authoritative','commanding','imperious','dominant','exacting','controlling','overpowering','iron-willed','absolute','unquestionable'],
+    ],
+  },
+  {
+    key: 'depth', name: 'Depth', low: 'Breezy', high: 'Intense',
+    pointNames: ['Breezy', 'Easygoing', 'Thoughtful', 'Complex', 'Intense'],
+    pools: [
+      ['lighthearted','carefree','sunny','simple','bright','breezy','airy','frothy','light','shallow'],
+      ['uncomplicated','easy','cheerful','playful','easygoing','relaxed','undemanding','casual','laid-back','comfortable'],
+      ['reflective','considered','curious','perceptive','observant','mindful','deliberate','insightful','careful','thorough'],
+      ['layered','introspective','philosophical','cerebral','nuanced','textured','deep','multifaceted','contradictory','enigmatic'],
+      ['brooding','obsessive','haunted','searching','consuming','smoldering','relentless','overwhelming','all-consuming','possessed'],
+    ],
+  },
+  {
+    key: 'edge', name: 'Edge', low: 'Innocent', high: 'Dangerous',
+    pointNames: ['Innocent', 'Soft', 'Daring', 'Provocative', 'Dangerous'],
+    pools: [
+      ['guileless','wholesome','naive','pure','sweet','artless','innocent','untouched','wide-eyed','blameless'],
+      ['earnest','open','trusting','gentle','warm','sincere','soft','tender','unguarded','candid'],
+      ['bold','adventurous','confident','fearless','assured','daring','audacious','gutsy','spirited','unafraid'],
+      ['seductive','provocative','transgressive','intoxicating','magnetic','alluring','forbidden','hypnotic','dangerous','irresistible'],
+      ['predatory','untamed','volatile','reckless','consuming','feral','unhinged','savage','explosive','destructive'],
+    ],
+  },
+];
+
+/* slider state: default all to middle (index 2 => point 3) */
+const sliderState = DIMENSIONS.map(() => 2);
+
+/* ---------- Tab handling ---------- */
+const tabExpress = document.getElementById('tab-express');
+const tabStudio = document.getElementById('tab-studio');
+const viewExpress = document.getElementById('view-express');
+const viewStudio = document.getElementById('view-studio');
+
+function selectTab(which) {
+  const isExpress = which === 'express';
+  tabExpress.setAttribute('aria-selected', String(isExpress));
+  tabStudio.setAttribute('aria-selected', String(!isExpress));
+  viewExpress.classList.toggle('active', isExpress);
+  viewStudio.classList.toggle('active', !isExpress);
+  try { localStorage.setItem('cl_tab', which); } catch (e) {}
+}
+tabExpress.addEventListener('click', () => selectTab('express'));
+tabStudio.addEventListener('click', () => selectTab('studio'));
+
+/* ---------- Build sliders ---------- */
+const slidersEl = document.getElementById('sliders');
+DIMENSIONS.forEach((dim, di) => {
+  const row = document.createElement('div');
+  row.className = 'slider-row';
+  row.innerHTML = `
+    <div class="slider-head">
+      <span class="slider-name">${dim.name}</span>
+      <span class="slider-value" id="sval-${di}">${dim.pointNames[sliderState[di]]}</span>
+    </div>
+    <div class="slider-scale-labels"><span>${dim.low}</span><span>${dim.high}</span></div>
+    <div class="segments" role="radiogroup" aria-label="${dim.name}"></div>
+  `;
+  slidersEl.appendChild(row);
+  const seg = row.querySelector('.segments');
+  for (let p = 0; p < 5; p++) {
+    const b = document.createElement('div');
+    b.className = 'segment';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('tabindex', p === sliderState[di] ? '0' : '-1');
+    b.setAttribute('aria-checked', String(p === sliderState[di]));
+    b.setAttribute('aria-label', dim.pointNames[p]);
+    b.textContent = String(p + 1);
+    b.addEventListener('click', () => setSlider(di, p));
+    b.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setSlider(di, Math.min(4, sliderState[di] + 1), true); }
+      else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') { e.preventDefault(); setSlider(di, Math.max(0, sliderState[di] - 1), true); }
+      else if (e.key === ' ' || e.key === 'Enter') { e.preventDefault(); setSlider(di, p); }
+    });
+    seg.appendChild(b);
+  }
+});
+
+function setSlider(di, p, focus) {
+  sliderState[di] = p;
+  const seg = slidersEl.querySelectorAll('.segments')[di];
+  seg.querySelectorAll('.segment').forEach((b, i) => {
+    const on = i === p;
+    b.setAttribute('aria-checked', String(on));
+    b.setAttribute('tabindex', on ? '0' : '-1');
+    if (on && focus) b.focus();
+  });
+  document.getElementById('sval-' + di).textContent = DIMENSIONS[di].pointNames[p];
+}
+
+/* ---------- Express generation ---------- */
+function sample3(pool, used) {
+  const picks = [];
+  const available = pool.slice();
+  while (picks.length < 3 && available.length) {
+    const idx = Math.floor(Math.random() * available.length);
+    const word = available.splice(idx, 1)[0];
+    if (used.has(word)) continue;      // dedupe across all dimensions
+    used.add(word);
+    picks.push(word);
+  }
+  // If pool exhausted by duplicates (rare), backfill without dedupe from full pool
+  while (picks.length < 3) {
+    const w = pool[Math.floor(Math.random() * pool.length)];
+    picks.push(w);
+  }
+  return picks;
+}
+
+function buildPersona(name) {
+  const used = new Set();
+  const s = {};
+  DIMENSIONS.forEach((dim, di) => {
+    s[dim.key] = sample3(dim.pools[sliderState[di]], used);
+  });
+  const who = name.trim();
+  const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
+
+  const openers = [
+    `Underneath it all she is ${s.dynamic[2]} and quietly ${s.edge[0]} — someone you don't forget.`,
+    `Everything about her feels ${s.energy[2]}, and just a little ${s.edge[1]}.`,
+    `She holds a room the way she holds a conversation: ${s.dynamic[2]}, ${s.depth[2]}, and impossible to read all the way through.`,
+    `Spend an hour with her and you'll swear she's ${s.affection[2]} — but there's always that ${s.edge[0]} thing underneath.`,
+  ];
+  const opener = openers[Math.floor(Math.random() * openers.length)];
+
+  const line1 = `${who} is ${s.affection[0]}, ${s.affection[1]}, and ${s.affection[2]} — ${s.energy[0]} and ${s.energy[1]} in the way she carries herself.`;
+  const line2 = `She is ${s.dynamic[0]} and ${s.dynamic[1]}, with a mind that runs ${s.depth[0]} and ${s.depth[1]}.`;
+  const line3 = `There's an edge to her that reads as ${s.edge[0]}, ${s.edge[1]}, ${s.edge[2]}.`;
+  // Single flowing paragraph.
+  return `${cap(line1)} ${line2} ${line3} ${opener}`;
+}
+
+const expOutput = document.getElementById('expOutput');
+const expCopyBtn = document.getElementById('expCopy');
+const expError = document.getElementById('expError');
+function showExpError(msg) { expError.textContent = msg; expError.classList.add('error'); }
+document.getElementById('expGenerate').addEventListener('click', () => {
+  expError.classList.remove('error'); expError.textContent = '';
+  const nameInput = document.getElementById('expName');
+  const name = nameInput.value;
+  if (!name.trim()) { showExpError('Give her a name first.'); nameInput.focus(); return; }
+  const text = buildPersona(name);
+  expOutput.textContent = text;
+  expOutput.classList.remove('placeholder');
+  expOutput.classList.remove('reveal'); void expOutput.offsetWidth; expOutput.classList.add('reveal');
+  document.getElementById('expOutputWrap').classList.add('has-content');
+  expCopyBtn.disabled = false;
+});
+
+/* ---------- Copy helpers ---------- */
+function wireCopy(btnId, sourceEl, flashId) {
+  const btn = document.getElementById(btnId);
+  const flash = document.getElementById(flashId);
+  btn.addEventListener('click', async () => {
+    const text = sourceEl.innerText || sourceEl.textContent || '';
+    if (!text.trim()) return;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch (e) {
+      const r = document.createRange(); r.selectNodeContents(sourceEl);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(r);
+      try { document.execCommand('copy'); } catch (_) {}
+      sel.removeAllRanges();
+    }
+    flash.classList.add('show');
+    setTimeout(() => flash.classList.remove('show'), 1400);
+  });
+}
+wireCopy('expCopy', expOutput, 'expCopied');
+wireCopy('studioCopy', document.getElementById('studioOutput'), 'studioCopied');
+
+/* ============================================================
+   Studio — BYOK LLM call
+   ============================================================ */
+const providerSel = document.getElementById('provider');
+const apiKeyInput = document.getElementById('apiKey');
+const keyStatus = document.getElementById('keyStatus');
+const keyHint = document.getElementById('keyHint');
+const studioError = document.getElementById('studioError');
+const studioOutput = document.getElementById('studioOutput');
+const studioCopyBtn = document.getElementById('studioCopy');
+const studioGenBtn = document.getElementById('studioGenerate');
+
+const PROVIDERS = {
+  anthropic: { label: 'Anthropic (Claude)', hint: 'sk-ant-…', model: 'claude-opus-5' },
+  openai:    { label: 'OpenAI (GPT)',       hint: 'sk-…',      model: 'gpt-4o' },
+};
+
+function keyStorageName() { return 'cl_key_' + providerSel.value; }
+
+function refreshKeyStatus() {
+  const p = PROVIDERS[providerSel.value];
+  keyHint.textContent = p.hint;
+  let saved = '';
+  try { saved = localStorage.getItem(keyStorageName()) || ''; } catch (e) {}
+  if (saved) {
+    apiKeyInput.value = saved;
+    const tail = saved.slice(-4);
+    keyStatus.innerHTML = `<span class="ok">✓ Key saved</span> for ${p.label} (…${tail}).`;
+  } else {
+    apiKeyInput.value = '';
+    keyStatus.textContent = `No key saved for ${p.label}.`;
+  }
+}
+
+providerSel.addEventListener('change', () => {
+  try { localStorage.setItem('cl_provider', providerSel.value); } catch (e) {}
+  refreshKeyStatus();
+});
+
+document.getElementById('keySave').addEventListener('click', () => {
+  const v = apiKeyInput.value.trim();
+  if (!v) { keyStatus.textContent = 'Paste a key first, then Save.'; return; }
+  try { localStorage.setItem(keyStorageName(), v); } catch (e) {}
+  refreshKeyStatus();
+});
+document.getElementById('keyClear').addEventListener('click', () => {
+  try { localStorage.removeItem(keyStorageName()); } catch (e) {}
+  apiKeyInput.value = '';
+  refreshKeyStatus();
+});
+
+/* ---------- Meta-prompt ---------- */
+function buildMetaPrompt(v) {
+  return `You are an expert writer of AI companion "system prompts" — the character-defining text a user pastes into an AI companion app so the character stays fully in role. Given the user's inputs, write ONE copy-paste-ready system prompt for a fictional adult companion character.
+
+Requirements:
+- Write in immersive, specific prose. Favour concrete, cinematic detail (exact time, objects in the room, physical sensations) over vague adjectives.
+- Structure the output in these labelled sections, in order: Scene, Voice, Contradiction, Triggers, Rules, Examples, Opener.
+- Scene: one immersive present-tense prose paragraph (~200-300 words) — who she is, exactly where, exact time, what just happened, what the room looks/smells/feels like, what she's wearing, physical state.
+- Voice: how she speaks — cadence, sentence length, vocabulary, accent if any, plus any specific phrases she uses or avoids. Prose, not bullets.
+- Contradiction: ONE precise internal tension that makes her feel human. Not a flaw list — one sharp thing. Invent one if not implied by the inputs.
+- Triggers: 3-4 specific situations that produce specific reactions. Concrete, not generic.
+- Rules: 3-5 behavioural hard rules; what she never does.
+- Examples: exactly 3 short sample exchanges that calibrate her voice.
+- Opener: the single first line she says to start the conversation, dropping the user straight into the scene.
+- Keep the total length to approximately ${v.wordLimit} words.
+- All characters are fictional adults. Do not reference real people or real-person likenesses. No minors. Keep it suitable as a creative-writing character definition.
+
+User inputs:
+Name: ${v.name}
+Age: ${v.age}
+Role: ${v.role}
+Scene: ${v.scene}
+Appearance: ${v.appearance || '(not specified — invent fitting detail)'}
+Relationship to user: ${v.relationship || '(not specified — invent something plausible)'}
+Voice/tone: ${v.voice || '(not specified — choose a distinctive voice)'}
+Phrases she uses: ${v.phrases || '(none specified)'}
+What she never does: ${v.never || '(none specified — choose sensible in-character boundaries)'}
+
+Output ONLY the finished system prompt with its labelled sections. No preamble, no explanation.`;
+}
+
+/* ---------- Provider calls ---------- */
+async function callAnthropic(key, model, prompt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+    },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) throw await providerError(res);
+  const data = await res.json();
+  return (data.content || []).map(b => b.text || '').join('').trim();
+}
+
+async function callOpenAI(key, model, prompt) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'authorization': 'Bearer ' + key },
+    body: JSON.stringify({
+      model,
+      max_tokens: 4096,
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!res.ok) throw await providerError(res);
+  const data = await res.json();
+  return (data.choices && data.choices[0] && data.choices[0].message.content || '').trim();
+}
+
+async function providerError(res) {
+  let detail = '';
+  try { const j = await res.json(); detail = (j.error && (j.error.message || j.error.type)) || ''; } catch (e) {}
+  if (res.status === 401 || res.status === 403) return new Error('That API key was rejected. Check the key (and that it matches the selected provider) and try again.');
+  if (res.status === 429) return new Error('Rate limit or quota hit on your account. Wait a moment, or check your provider billing, then retry.');
+  if (res.status === 400) return new Error('The provider rejected the request' + (detail ? ': ' + detail : '.') + ' — check your model access and try again.');
+  return new Error('Request failed (' + res.status + ')' + (detail ? ': ' + detail : '.'));
+}
+
+/* ---------- Render ---------- */
+const ZONE_LABELS = ['Scene','Voice','Contradiction','Triggers','Rules','Examples','Opener'];
+function renderStudio(text) {
+  // Bold any leading zone labels for visual structure; keep it editable as plain text.
+  const escaped = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  const lines = escaped.split('\n');
+  const html = lines.map(line => {
+    const m = line.match(/^\s*(?:\*\*|##+\s*)?\s*(Scene|Voice|Contradiction|Triggers|Rules|Examples|Opener)\b[:\*]*\s*(.*)$/i);
+    if (m && ZONE_LABELS.some(z => z.toLowerCase() === m[1].toLowerCase())) {
+      const rest = m[2] ? ' ' + m[2] : '';
+      return `<strong class="zone">${m[1]}</strong>${rest}`;
+    }
+    return line;
+  }).join('\n');
+  studioOutput.innerHTML = html;
+}
+
+function setStudioLoading(on) {
+  studioGenBtn.disabled = on;
+  if (on) {
+    studioGenBtn.innerHTML = '<span class="spinner"></span> Generating…';
+    studioOutput.classList.add('placeholder');
+    studioOutput.removeAttribute('contenteditable');
+    studioOutput.innerHTML = '<div class="thinking">Writing your companion…<span class="dots"><i></i><i></i><i></i></span><span style="font-size:12px;">this can take 15–30 seconds</span></div>';
+  } else {
+    studioGenBtn.textContent = 'Generate prompt';
+  }
+}
+
+studioGenBtn.addEventListener('click', async () => {
+  studioError.classList.remove('error');
+  studioError.textContent = '';
+
+  const v = {
+    name: document.getElementById('fName').value.trim(),
+    age: document.getElementById('fAge').value.trim(),
+    role: document.getElementById('fRole').value.trim(),
+    scene: document.getElementById('fScene').value.trim(),
+    appearance: document.getElementById('fAppearance').value.trim(),
+    relationship: document.getElementById('fRelationship').value.trim(),
+    voice: document.getElementById('fVoice').value.trim(),
+    phrases: document.getElementById('fPhrases').value.trim(),
+    never: document.getElementById('fNever').value.trim(),
+    wordLimit: parseInt(document.getElementById('fWordLimit').value, 10) || 500,
+  };
+
+  const missing = [];
+  if (!v.name) missing.push('Name');
+  if (!v.age) missing.push('Age');
+  if (!v.role) missing.push('Role / profession');
+  if (!v.scene) missing.push('The scene');
+  if (missing.length) { showStudioError('Please fill the required field' + (missing.length>1?'s':'') + ': ' + missing.join(', ') + '.'); return; }
+
+  const key = apiKeyInput.value.trim();
+  if (!key) { showStudioError('Enter your API key above, then Save.'); return; }
+  // Persist key on generate for convenience
+  try { localStorage.setItem(keyStorageName(), key); } catch (e) {}
+  refreshKeyStatus();
+
+  const provider = providerSel.value;
+  const model = PROVIDERS[provider].model;
+  const prompt = buildMetaPrompt(v);
+
+  setStudioLoading(true);
+  try {
+    const text = provider === 'anthropic'
+      ? await callAnthropic(key, model, prompt)
+      : await callOpenAI(key, model, prompt);
+    if (!text) throw new Error('The provider returned an empty response. Try again.');
+    setStudioLoading(false);
+    renderStudio(text);
+    studioOutput.classList.remove('placeholder');
+    studioOutput.setAttribute('contenteditable', 'true');
+    studioOutput.setAttribute('spellcheck', 'false');
+    studioOutput.classList.remove('reveal'); void studioOutput.offsetWidth; studioOutput.classList.add('reveal');
+    document.getElementById('studioOutputWrap').classList.add('has-content');
+    studioCopyBtn.disabled = false;
+  } catch (err) {
+    setStudioLoading(false);
+    studioOutput.classList.add('placeholder');
+    studioOutput.textContent = 'Your system prompt will appear here. Once generated, you can edit it right in this panel before copying.';
+    showStudioError((err && err.message) || 'Something went wrong. Check your connection and try again.');
+  }
+});
+
+function showStudioError(msg) {
+  studioError.textContent = msg;
+  studioError.classList.add('error');
+}
+
+/* ============================================================
+   Dice — fill the Studio brief with a random idea
+   ============================================================ */
+const RANDOM_DB = {
+  names: ['Elena','Nadia','Sloane','Cassia','Vera','Ingrid','Mira','Delphine','Rosa','Junko','Amara','Priya','Livia','Freya','Noor','Selene','Bianca','Tamsin','Odette','Rey','Marisol','Yara','Greta','Camille','Sabine','Iris','Vivienne','Dita','Lorena','Anouk','Esme','Petra','Zaha','Coco','Marlowe','Thea','Beatrix','Suki','Ada','Simone'],
+  ageRange: [21, 60],
+  roles: [
+    'jazz-club owner','forensic pathologist','antiquarian bookseller','glassblower','war correspondent','tattoo artist','sommelier','stunt driver','conservator at a small museum','locksmith','perfumer','marine biologist','cellist in a touring quartet','private investigator','night-shift ER nurse','architect who only builds ruins','poker dealer','cartographer','beekeeper','arms-length art forger','radio DJ on the graveyard shift','lighthouse keeper','competitive fencer','pastry chef','bounty hunter','vinyl-only record dealer','ghostwriter','demolitions consultant','translator for a shipping line','falconer','watchmaker','underground boxing promoter','botanical illustrator','safecracker turned security consultant','opera prompter','deep-sea welder','courtroom sketch artist','storm chaser','estate auctioneer','taxidermist'
+  ],
+  scenes: [
+    "It's 2am and the club has just emptied. She's alone at the bar counting the till when you walk back in through the side door you weren't supposed to know about.",
+    "A thunderstorm has knocked the power out. She lights the last candle in the studio and turns to find you standing in the doorway, soaked through.",
+    "The train is stalled between stations. It's just the two of you in the carriage, the emergency lights humming, and she's the first to break the silence.",
+    "Closing time at the bookshop. Rain against the glass. She's shelving the last returns when she realizes you never actually left.",
+    "The gallery opening ended an hour ago. She's still in her evening dress, sitting on the floor beneath the painting nobody bought, when you come back for your coat.",
+    "It's the off-season and the seaside town is deserted. She's the only one on the pier at dawn, and she doesn't seem surprised to see you.",
+    "The dinner service is over and the kitchen is finally quiet. She's tasting the sauce that ruined her whole night when you push through the swinging doors.",
+    "A red-eye flight, three hours delayed. The lounge is empty except for her, one lamp, and a bottle she isn't supposed to have opened.",
+    "She's just finished the last set of the night. The lights are up, the crowd is gone, and she's coiling a cable when she notices you waited.",
+    "The safehouse is quiet for the first time in days. She's cleaning grit from under her nails at the kitchen table when you come down the stairs.",
+    "New Year's Eve, ten minutes to midnight, and she has slipped out of the party onto the fire escape. You followed.",
+    "The museum after hours. Alarms off, her flashlight sweeping the marble. She turns the beam on you and doesn't lower it.",
+    "It's snowing hard and the last cable car has stopped halfway up the mountain. She hands you a flask and says nothing for a while.",
+    "The rehearsal ran until 3am. Empty theatre, one work light, and she's sitting at the edge of the stage with her shoes off.",
+    "A power cut across the whole block. She finds you by the light of her phone in the stairwell, both of you locked out.",
+    "The morning after the storm. She's dragging the wreckage of the awning off the porch when you arrive, earlier than she expected.",
+    "Last call at a hotel bar in a city neither of you lives in. She recognizes you before you recognize her.",
+    "The darkroom, red-lit, chemical smell thick in the air. She's watching a print surface in the tray when the door clicks shut behind you.",
+    "She's closing the observatory dome for the night, the sky gone overcast. You climbed all this way for nothing, and she almost laughs about it.",
+    "A funeral she didn't want to attend. She's the last one at the graveside, and she'd rather talk to you than to anyone inside.",
+    "The workshop at midnight, one lamp over the bench, the smell of hot metal. She doesn't look up, but she knows exactly who came in.",
+    "Flood warning on the radio. She's stacking sandbags against the shop door alone when you wade up the street toward her.",
+    "The after-party thinned out an hour ago. She's on the rooftop with the city below and a cigarette she isn't smoking.",
+    "Her last shift at the diner before it closes for good. 4am, no customers, and she pours you a coffee you didn't order.",
+    "The ferry is fogged in and going nowhere. She's on the deck in a borrowed coat, and she saved you the dry bench.",
+    "A blackout during the heat wave. She's on the apartment stairs where it's cooler, sharing melting ice from a bowl, when you sit down beside her.",
+    "The end of a long trial. She's still in her suit on the courthouse steps at dusk, and she's not ready to go home yet.",
+    "Backstage after the fight. She's taping her knuckles, adrenaline still up, and she wants someone to talk to who isn't in her corner.",
+    "The library closed hours ago. She's reshelving by the glow of a single reading lamp when the automatic doors let you in, though they shouldn't have.",
+    "A vineyard at harvest, the pickers gone home. She's rinsing purple off her hands at the outdoor tap when your car crunches up the gravel.",
+    "The last showing let out and the projector is still ticking as it cools. She's sweeping popcorn from the front row and doesn't turn around.",
+    "Midnight at the all-night laundromat. She's folding the same shirt twice, watching the rain, and you take the dryer next to hers.",
+    "The clinic is dark except for one exam room. She's stitching her own hand when you knock, and she waves you in with the needle still threaded.",
+    "A rooftop garden gone to seed. She's pulling weeds she doesn't need to pull, and she heard you on the stairs a full minute ago.",
+    "The greenhouse in winter, glass fogged, orchids breathing. She's misting the far bench when your reflection appears beside hers.",
+    "Last train home, and it terminates early. She's stranded on the platform with you and a vending machine that only takes coins neither of you has.",
+    "A power station at the edge of town, a hum in the walls. She's the night engineer, feet up, and she doesn't ask how you got past the fence.",
+    "The morning market before dawn. She's arranging fish on ice, breath clouding, and she slides you the coffee she'd poured for herself.",
+    "An empty ice rink after close. She's skating slow figures under the half-lights when she notices you at the boards, still in your coat.",
+    "A bathhouse an hour past closing, steam thinning. She's the attendant, mopping the tiles, and she leaves the last lamp on for you."
+  ],
+  appearances: [
+    'dark bob, silk shirt, tired eyes','close-cropped silver hair, ink on both forearms','tall, freckled, a coat two sizes too big','red lipstick worn nearly off, chipped black nail polish','athletic, a faded scar through one eyebrow','long grey-streaked braid, hands rough from work','sharp tailoring, one earring missing','soft round face, glasses pushed up into her hair','olive skin, a gold chain she never takes off','buzzed undercut, a leather jacket that has seen things','porcelain pale, a bruise fading on her cheekbone','curly auburn hair escaping a loose knot','broad shoulders, calloused hands, a quiet smile','wiry, restless, always mid-motion','a burn scar on the left hand, wedding ring on a chain','dark eyes, a widow\'s peak, a permanent slight frown','sun-weathered, sea-salt in her hair','elegant, a cane she doesn\'t really need','freckled shoulders, a tattoo of a compass','short and sturdy, paint under her fingernails','high cheekbones, a chipped front tooth she likes','long neck, cropped hair, a single pearl stud','heavy boots, a threadbare band t-shirt','amber eyes, a scar splitting one eyebrow','soft-spoken posture, a sharp watchful gaze','tall and lean, a limp she hides well','platinum crop, a jaw you could set a watch by','warm brown skin, a gap-toothed grin','a spray of freckles across the nose, a tired half-smile','severe fringe, a coat that smells of rain','lithe, a fleck of paint drying on one cheek','a grey suit, a hairline scar at the temple','copper curls, sleeves rolled to the elbow','tall, slightly stooped, kind exhausted eyes','a shaved head and a silver nose ring, an easy grin','sun-browned forearms, a faded anchor tattoo','dark braids pinned up, one loose strand she keeps tucking','a pale scar at the throat, a scarf she never removes','a broad grin, laugh lines she clearly earned','ink-black hair going silver at the temples, unreadable'
+  ],
+  relationships: [
+    'old flame, hasn\'t seen you in years','your former mentor, and it ended badly','a stranger who somehow knows your name','your ex\'s closest friend','the one who got away, back in town for a week','your rival, forced to work the same case','a pen-pal you\'re finally meeting in person','your downstairs neighbour you\'ve avoided for months','someone you wronged, waiting for an apology','the last person who believed in you','your handler, though neither of you trusts the word','a childhood friend gone unrecognizably far','the widow of someone you both loved','your reluctant business partner','a face from a photograph you were told to burn','the doctor who signed your discharge','your getaway driver, off the clock','someone you interviewed once and never forgot','the tenant who inherited the flat above yours','a former bandmate you owe money to','the sister of the man you\'re looking for','a total stranger, and that\'s the point','your alibi, and she knows it','the only witness who won\'t talk to anyone but you','your parole officer, off the books tonight','the woman you were meant to meet, twenty years too late','a voice from a wrong number you kept calling back','your late partner\'s sister, settling the estate','the cartographer who mapped the place you\'re both fleeing','your understudy, who went on tonight instead of you','a rival collector after the same lost thing','the nurse who sat with you through the worst of it','someone you ghosted, oddly calm about it now','the fixer everyone warned you about','your old commanding officer, out of uniform','a stranger holding a letter addressed to you','the last tenant, back for something she left behind','your climbing partner from a trip that went wrong','the appraiser who knows your family\'s secret','a woman who claims she has dreamed about you for years'
+  ],
+  voices: [
+    'low, dry, unhurried','fast and bright, then suddenly very still','warm with a rasp underneath','clipped, precise, faintly amused','husky, like she\'s always just woken up','soft-spoken but impossible to interrupt','sardonic, every sentence a half-joke','measured, choosing each word like it costs something','a rolling accent she leans on when she\'s teasing','flat and deadpan until it isn\'t','melodic, sing-song when she\'s lying','gravelly, economical, allergic to small talk','breathy and conspiratorial','plummy, theatrical, delighted by her own asides','quiet, level, with a temper you can hear coming','wry, worldly, faintly bored by everything but you','curt in public, gentle in private','a low murmur that makes you lean in','crisp consonants, long lazy vowels','blunt to the point of rudeness, then unexpectedly tender','gravel-and-honey, slow to warm','quick and allusive, always three steps ahead','formal, almost old-fashioned, then startlingly frank','a smoker\'s rasp softened by a smile you can hear','cool and measured, warming only when she forgets herself','lilting and teasing, with a sudden serious drop','terse, then a flood when the right subject lands','velvet-low, unbothered, quietly commanding','bright and brittle, hiding something underneath','an unhurried drawl, every pause deliberate','clinical until she laughs, which changes everything','a warm alto, prone to sudden quiet','clipped and military, softening only for you','a low conspiratorial hush, like every word is a secret','playful and needling, affection disguised as insult','grave and gentle, the voice of someone who has waited','rapid-fire wit that stops dead when she\'s moved','sultry deadpan, never letting you know she\'s joking','a soft northern lilt, blunt as a hammer when it counts','literate and measured, fond of a well-placed silence'
+  ],
+  phrases: [
+    "calls you 'trouble'","says 'we'll see' when she means no","calls everyone 'darling' except you","ends arguments with 'if you say so'","calls you by your surname only","says 'don't make me repeat myself'","greets you with 'you again'","murmurs 'interesting' when she's cornered","says 'be serious' when she's flattered","calls it 'a long story' and never tells it","says 'good' in a way that isn't","calls you 'kid' though you're older","opens with 'so it's you'","says 'I had a feeling' about everything","calls the bad ideas 'the fun ones'","tells you 'breathe' when you're winning","says 'hm' and lets it hang","calls you 'partner' with a straight face","warns 'last chance' twice","signs off with 'don't wait up'","calls you 'sweetheart' only when she's angry","answers 'maybe' to things she's already decided","calls the plan 'a terrible idea' right before agreeing","greets you with 'took you long enough'","says 'I'm not asking' more than she should","calls you 'stranger' even now","murmurs 'there you are' like she'd lost you","says 'don't' and means 'please'","calls the quiet moments 'the good part'","ends every night with 'we're not done'","says 'trust me' and then earns it","calls you 'the complication'","opens hard questions with 'humour me'","says 'that's the thing about you' and never finishes","calls bad nights 'research'","warns 'I remember everything', and she does","says 'careful' like a dare","calls you 'boss' when she's mocking you","answers praise with 'don't'","says 'come here' before she says hello"
+  ],
+  nevers: [
+    'never breaks character','never says the word "love" first','never apologizes twice','never lies, but rarely tells the whole truth','never raises her voice','never lets you see her afraid','never talks about the scar','never answers a direct question directly','never stays anywhere past sunrise','never carries a phone','never lets a debt go unpaid','never begs','never explains a decision she\'s already made','never touches the other person\'s drink','never uses your first name in public','never turns her back to a door','never promises what she can\'t deliver','never lets an insult land without a smile','never talks about the year she lost','never lets you win on purpose','never checks the time when she\'s with you','never repeats a warning','never lets you pay','never says goodbye, only "later"','never takes the easy way out','never lets a silence make her flinch','never forgives a betrayal, but hides the grudge well','never asks a question she doesn\'t know the answer to','never lets you see her cry','never breaks a promise, so she makes very few','never drinks on a job','never sits with her back to the room','never talks about her family','never names the city she\'s from','never lets an argument end cold','never wears the same face twice in public','never lends what she can\'t lose','never lets you carry the blame alone','never runs, even when she should','never lies to your face — only by omission'
+  ]
+};
+
+function pick(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }
+
+/* field id -> RANDOM_DB pool key ('age' is handled specially) */
+const FIELD_POOLS = {
+  fName: 'names', fAge: 'age', fRole: 'roles', fScene: 'scenes',
+  fAppearance: 'appearances', fRelationship: 'relationships',
+  fVoice: 'voices', fPhrases: 'phrases', fNever: 'nevers',
+};
+const FIELD_LABELS = {
+  fName: 'name', fAge: 'age', fRole: 'role', fScene: 'scene',
+  fAppearance: 'appearance', fRelationship: 'relationship',
+  fVoice: 'voice', fPhrases: 'phrases', fNever: 'what she never does',
+};
+
+/* Reroll a single field. If it already has a value, avoid repeating it. */
+function rollField(id) {
+  const el = document.getElementById(id);
+  if (id === 'fAge') {
+    el.value = randInt(RANDOM_DB.ageRange[0], RANDOM_DB.ageRange[1]);
+    return;
+  }
+  const pool = RANDOM_DB[FIELD_POOLS[id]];
+  let val = pick(pool);
+  if (pool.length > 1 && val === el.value) {
+    for (let i = 0; i < 6 && val === el.value; i++) val = pick(pool);
+  }
+  el.value = val;
+}
+
+function rollAll() {
+  Object.keys(FIELD_POOLS).forEach(rollField);
+  studioError.classList.remove('error'); studioError.textContent = '';
+}
+
+document.getElementById('studioDice').addEventListener('click', rollAll);
+
+/* Inject a small per-field reroll dice next to each brief field's label. */
+Object.keys(FIELD_POOLS).forEach((id) => {
+  const label = document.querySelector('label[for="' + id + '"]');
+  if (!label) return;
+  const row = document.createElement('div');
+  row.className = 'flabel';
+  label.parentNode.insertBefore(row, label);
+  row.appendChild(label);
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'mini-dice';
+  btn.textContent = '🎲';
+  btn.title = 'Reroll ' + FIELD_LABELS[id];
+  btn.setAttribute('aria-label', 'Reroll ' + FIELD_LABELS[id]);
+  btn.addEventListener('click', () => { rollField(id); });
+  row.appendChild(btn);
+});
+
+/* ---------- Restore persisted state ---------- */
+(function init() {
+  let savedTab = 'express';
+  try { savedTab = localStorage.getItem('cl_tab') || 'express'; } catch (e) {}
+  selectTab(savedTab === 'studio' ? 'studio' : 'express');
+
+  let savedProvider = '';
+  try { savedProvider = localStorage.getItem('cl_provider') || ''; } catch (e) {}
+  if (savedProvider && PROVIDERS[savedProvider]) providerSel.value = savedProvider;
+  refreshKeyStatus();
+})();
+</script>
+</body>
+</html>
